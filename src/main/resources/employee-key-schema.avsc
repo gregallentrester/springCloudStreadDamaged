@@ -1,0 +1,14 @@
+{
+	"type": "record",
+	"name": "EmployeeKey",
+	"namespace": "net.greg.schema",
+	"fields": [
+	 {
+		"name": "id",
+		"type": "int"
+	},
+	{
+		"name": "departmentName",
+		"type": "string"
+	}]
+}

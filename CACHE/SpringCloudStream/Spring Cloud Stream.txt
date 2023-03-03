@@ -1,0 +1,143 @@
+ref:  https://www.baeldung.com/spring-cloud-stream-kafka-avro-confluent
+
+~/stage/tutorials/spring-cloud-modules/spring-cloud-stream/spring-cloud-stream-kafka
+
+
+
+
+^^^
+AVRO - Data Serialization.
+Schema expressed in (a JSON.avsc file) for Serialization.
+
+AVRO can generate classes to represent the JSON data.
+
+
+
+AVRO keeps Schema in Registry, supply just an ID w/ message.
+
+Schemas are stored by Subject; by default Registry checks compatibility
+before allowing a new Schema to be uploaded against a Subject.
+
+
+Producer consults the Registry to establish the correct ID to use when sending a Message.
+Consumer uses the Registry to fetch the Producer's Schema.
+
+When the Consumer knows both the Producer's Schema and its own desired Message format,
+AVRO converts the data into the Consumer's desired format.
+
+
+
+
+^^^
+POM
+
+Confluent's Serializer is in their Repo.
+
+Use a Maven Plugin to generate the Avro classes.
+
+
+
+
+^^^
+TESTING
+1.  Use an existing Kafka and Schema Registry set up.
+2.  Use a Dockerized Confluent/Kafka.
+
+
+
+
+^^^
+SPRING CLOUD STREAM
+Provides the Processor Interface for a Producer.
+
+Write a Producer using Spring Cloud Stream.
+It publishes employee details on a Topic.
+
+Create a Consumer reads events from the Topic
+and writes them outas a Log statement.
+
+
+
+
+^^^
+KAFKA BINDINGS
+The I/O Channels of a Processor object are configured w/ correct destinations/Topics.
+
+
+1.  To apply both the Kafka and the schema registry bindings, annotate one ot the config class:
+       @EnableBinding and @EnableSchemaRegistryClient
+
+
+2.  Provide a ConfluentSchemaRegistryClient @Bean with an endPoint that's the URL of the
+    Confluent Schema Registry.
+
+
+
+
+^^^
+Test the Service w/ a POST:
+   curl -X POST localhost:8080/employees/1001/Harry/Potter
+
+
+
+
+^^^
+SERDE (Native Kafka Libs)
+Spring Boot defaults to the 'Content-Type' header to select the correct message converter.
+
+While the Content-Type being used is 'application/*+avro', it uses AvroSchemaMessageConverter
+to read/write AVRO formats.
+
+However, Confluent recommends using 'KafkaAvroSerializer' and 'KafkaAvroDeserializer'
+for message conversion.
+
+
+Spring's format has some drawbacks in terms of partitioning, and is not interoperable
+Confluent standards, which some non-Spring services on our Kafka instance may require.
+
+
+Enable the 'useNativeEncoding' to force Spring Cloud Stream to delegate serialization
+to the provided (Producer/Consumer) classes.
+
+Provide native settings properties for Kafka within Spring Cloud Stream:
+   kafka.binder.producer-properties
+   kafka.binder.consumer-properties
+
+
+
+
+^^^
+CONSUMER GROUPS, PARTITIONS
+Consumer Groups - the set of Consumers belonging to the same app - have the same Group Name.
+
+Consumers distribute Topic Partitions among themselves evenly.
+Messages in different Partitions process in parallely.
+
+In a Consumer Group, the max number of Consumers reading messages at a time is equal to the number of Partitions.  So we can configure the number of Partitions and Consumers to get the desired parallelism.
+
+In general, have more Partitions than the total number of Consumers across all ISRs of a Service.
+
+
+
+^^^
+PARTITION KEY
+When Messages are processed in parallel, ordinality is a challenge.
+
+For a given Partition, Messages process in order of arrival; to ensure that Messages land
+in the same Partition, provide a Partition Key while sending a Message to a Topic.
+
+Messages with the same Partition Key go to the same Partition.  If the Partition Key is
+not present, Messages partition round-robin.
+
+
+
+^^^
+CONSUMER CONCURRENCY
+Spring Cloud Stream can set the concurrency for a Consumer.
+
+Spring spawns n-different threads to consume independently.
+Consumers will read messages from the Topic concurrently.
+
+
+
+curl -X POST localhost:8080/employees/1001/Harry/Potter
